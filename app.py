@@ -1,6 +1,6 @@
 """
-MediOptima - AI-Powered Hospital Resource Optimization Dashboard
-Main Streamlit Application
+🚀 MediOptima - AI-Powered Hospital Resource Optimization Dashboard
+Futuristic Healthcare Analytics Platform
 """
 import streamlit as st
 import pandas as pd
@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import sys
 import os
+import time
 
 # Add modules to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
@@ -21,73 +22,437 @@ from anomaly_detector import AnomalyDetector
 from insight_generator import InsightGenerator
 from data_generator import generate_hospital_data
 
-# Page Configuration
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                    PAGE CONFIGURATION - FUTURISTIC THEME                    ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 st.set_page_config(
-    page_title="MediOptima | Hospital Resource Optimization",
-    page_icon="🏥",
+    page_title="⚕️ MediOptima | Neural Healthcare OS",
+    page_icon="🧬",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed",
+    menu_items={
+        'Get Help': 'https://github.com/Akashkumar37443/MediOptima',
+        'Report a bug': 'https://github.com/Akashkumar37443/MediOptima/issues',
+        'About': '# MediOptima v2.0\nAI-Powered Hospital Resource Optimization'
+    }
 )
 
-# Custom CSS
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                    CYBERPUNK / FUTURISTIC CSS THEME                       ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 st.markdown("""
 <style>
+    /* Import futuristic fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+    
+    /* Global dark theme with animated gradient background */
+    .stApp {
+        background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a2e, #16213e);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        color: #e0e0e0;
+        font-family: 'Rajdhani', sans-serif;
+    }
+    
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* Glassmorphism card effect */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        transition: all 0.3s ease;
+    }
+    
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px 0 rgba(0, 150, 255, 0.2);
+        border: 1px solid rgba(0, 200, 255, 0.3);
+    }
+    
+    /* Neon glow effects */
+    .neon-text {
+        font-family: 'Orbitron', sans-serif;
+        text-shadow: 
+            0 0 5px #00d4ff,
+            0 0 10px #00d4ff,
+            0 0 20px #00d4ff,
+            0 0 40px #00d4ff;
+        color: #fff;
+        letter-spacing: 2px;
+    }
+    
+    .neon-pulse {
+        animation: neonPulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes neonPulse {
+        0%, 100% { opacity: 1; text-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff; }
+        50% { opacity: 0.8; text-shadow: 0 0 5px #00d4ff, 0 0 10px #00d4ff; }
+    }
+    
+    /* Main header styling */
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f4e79;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 3.5rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #00d4ff, #7b2cbf, #00d4ff);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         text-align: center;
+        animation: shimmer 3s linear infinite;
+        letter-spacing: 4px;
+        margin-bottom: 10px;
     }
+    
+    @keyframes shimmer {
+        to { background-position: 200% center; }
+    }
+    
     .sub-header {
-        font-size: 1.2rem;
-        color: #5a6c7d;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.3rem;
+        color: #8892b0;
         text-align: center;
-        margin-bottom: 2rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 40px;
     }
+    
+    /* KPI Cards - Holographic effect */
     .kpi-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        color: white;
-        text-align: center;
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        border-radius: 16px;
+        padding: 25px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
     }
+    
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #00d4ff, #7b2cbf, #00d4ff);
+        border-radius: 16px;
+        opacity: 0;
+        z-index: -1;
+        transition: opacity 0.3s ease;
+    }
+    
+    .kpi-card:hover::before {
+        opacity: 0.5;
+    }
+    
     .kpi-card.alert {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(153, 27, 27, 0.15) 100%);
+        border: 1px solid rgba(239, 68, 68, 0.5);
+        animation: alertPulse 2s ease-in-out infinite;
     }
+    
+    @keyframes alertPulse {
+        0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+        50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.6); }
+    }
+    
     .kpi-card.warning {
-        background: linear-gradient(135deg, #feca57 0%, #ff9f43 100%);
-        color: #2d3436;
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(180, 83, 9, 0.15) 100%);
+        border: 1px solid rgba(245, 158, 11, 0.5);
     }
+    
     .kpi-card.success {
-        background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 95, 70, 0.15) 100%);
+        border: 1px solid rgba(16, 185, 129, 0.5);
     }
+    
     .metric-value {
-        font-size: 2rem;
-        font-weight: bold;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #fff, #00d4ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
+    
     .metric-label {
-        font-size: 0.9rem;
-        opacity: 0.9;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1rem;
+        color: #8892b0;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-top: 8px;
     }
+    
+    /* Tab styling */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        border-radius: 16px;
     }
+    
     .stTabs [data-baseweb="tab"] {
-        background-color: #f0f2f6;
-        border-radius: 4px 4px 0px 0px;
-        padding: 10px 20px;
-        font-weight: 500;
+        background: transparent;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        letter-spacing: 1px;
+        color: #8892b0;
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
     }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: rgba(0, 212, 255, 0.1);
+        color: #00d4ff;
+        border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%) !important;
+        color: #00d4ff !important;
+        border: 1px solid rgba(0, 212, 255, 0.5) !important;
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    }
+    
+    /* Alert boxes */
     .alert-box {
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        border-left: 4px solid;
+        position: relative;
+        overflow: hidden;
     }
-    .critical { background-color: #ffebee; border-left: 4px solid #c62828; }
-    .high { background-color: #fff3e0; border-left: 4px solid #ef6c00; }
-    .medium { background-color: #fffde7; border-left: 4px solid #f9a825; }
-    .info { background-color: #e3f2fd; border-left: 4px solid #1565c0; }
+    
+    .alert-box::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        transform: translateX(-100%);
+        animation: scan 3s ease infinite;
+    }
+    
+    @keyframes scan {
+        100% { transform: translateX(100%); }
+    }
+    
+    .critical { 
+        background: rgba(239, 68, 68, 0.1); 
+        border-left-color: #ef4444;
+        color: #fca5a5;
+    }
+    
+    .high { 
+        background: rgba(245, 158, 11, 0.1); 
+        border-left-color: #f59e0b;
+        color: #fcd34d;
+    }
+    
+    .medium { 
+        background: rgba(234, 179, 8, 0.1); 
+        border-left-color: #eab308;
+        color: #fde047;
+    }
+    
+    .info { 
+        background: rgba(59, 130, 246, 0.1); 
+        border-left-color: #3b82f6;
+        color: #93c5fd;
+    }
+    
+    /* Section headers */
+    h1, h2, h3 {
+        font-family: 'Orbitron', sans-serif;
+        color: #fff;
+        letter-spacing: 2px;
+    }
+    
+    h2 {
+        background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    
+    /* Dataframe styling */
+    .stDataFrame {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(0, 212, 255, 0.2);
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+    }
+    
+    .stButton > button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 25px rgba(0, 212, 255, 0.5);
+    }
+    
+    /* Progress bar */
+    .stProgress > div > div {
+        background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+        border-radius: 10px;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #00d4ff, #7b2cbf);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #00e4ff, #8b3cdf);
+    }
+    
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+    }
+    
+    /* Loading spinner */
+    .stSpinner > div {
+        border-color: #00d4ff transparent !important;
+    }
+    
+    /* Widget labels */
+    .css-1vbkxwb {
+        color: #8892b0 !important;
+        font-family: 'Rajdhani', sans-serif !important;
+    }
+    
+    /* Selectbox */
+    .stSelectbox > div > div {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        border-radius: 12px;
+        color: #fff;
+    }
+    
+    /* Metric containers */
+    [data-testid="metric-container"] {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 15px;
+        border: 1px solid rgba(0, 212, 255, 0.2);
+    }
+    
+    [data-testid="metric-container"] label {
+        color: #8892b0 !important;
+        font-family: 'Rajdhani', sans-serif !important;
+    }
+    
+    [data-testid="metric-container"] div {
+        color: #00d4ff !important;
+        font-family: 'Orbitron', sans-serif !important;
+    }
+    
+    /* Floating particles effect */
+    .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+    }
 </style>
+
+<!-- Animated particles overlay -->
+<div class="particles">
+    <canvas id="particles-canvas"></canvas>
+</div>
+
+<script>
+    // Simple particle animation
+    const canvas = document.getElementById('particles-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particles = [];
+        for (let i = 0; i < 50; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                radius: Math.random() * 2
+            });
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 212, 255, 0.3)';
+                ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+</script>
 """, unsafe_allow_html=True)
 
 # Initialize session state
@@ -122,9 +487,60 @@ def initialize_models():
     }
 
 def render_header():
-    """Render application header."""
-    st.markdown('<p class="main-header">🏥 MediOptima</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">AI-Powered Hospital Resource Optimization System</p>', unsafe_allow_html=True)
+    """Render futuristic application header."""
+    # Animated neural network logo effect
+    st.markdown("""
+        <div style="text-align: center; margin-bottom: 20px;">
+            <svg width="120" height="120" viewBox="0 0 120 120" style="animation: rotate 10s linear infinite;">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#7b2cbf;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.3"/>
+                <circle cx="60" cy="60" r="40" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.5">
+                    <animate attributeName="r" values="40;45;40" dur="3s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="60" cy="60" r="30" fill="none" stroke="url(#grad1)" stroke-width="3"/>
+                <text x="60" y="68" text-anchor="middle" fill="url(#grad1)" font-size="30" font-family="Orbitron">⚕</text>
+            </svg>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<p class="main-header">MEDIOPTIMA</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">NEURAL HEALTHCARE RESOURCE OPTIMIZATION SYSTEM v2.0</p>', unsafe_allow_html=True)
+    
+    # Live status indicator
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("""
+            <div style="text-align: center; margin-bottom: 30px;">
+                <span style="
+                    display: inline-block;
+                    width: 12px;
+                    height: 12px;
+                    background: #00d4ff;
+                    border-radius: 50%;
+                    animation: pulse 2s ease-in-out infinite;
+                    box-shadow: 0 0 10px #00d4ff;
+                    margin-right: 10px;
+                "></span>
+                <span style="color: #00d4ff; font-family: 'Rajdhani', sans-serif; letter-spacing: 3px;">
+                    SYSTEM ONLINE ● AI ENGINE ACTIVE
+                </span>
+            </div>
+            <style>
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.5; transform: scale(1.2); }
+                }
+                @keyframes rotate {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            </style>
+        """, unsafe_allow_html=True)
 
 def render_kpi_cards(df, forecast_data, bed_status, anomaly_status):
     """Render KPI cards."""
@@ -185,7 +601,7 @@ def render_forecast_tab(df, forecast_results, trend):
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        # Historical + Forecast chart
+        # Historical + Forecast chart with futuristic theme
         fig = go.Figure()
         
         # Historical data (last 60 days)
@@ -193,8 +609,10 @@ def render_forecast_tab(df, forecast_results, trend):
         fig.add_trace(go.Scatter(
             x=hist_data['Date'],
             y=hist_data['Daily_Patients'],
-            name='Historical',
-            line=dict(color='#3498db', width=2)
+            name='◈ HISTORICAL',
+            line=dict(color='#00d4ff', width=2),
+            fill='tozeroy',
+            fillcolor='rgba(0, 212, 255, 0.1)'
         ))
         
         # Forecast
@@ -203,8 +621,10 @@ def render_forecast_tab(df, forecast_results, trend):
             fig.add_trace(go.Scatter(
                 x=forecast_dates,
                 y=patient_forecast['predictions'],
-                name='Forecast',
-                line=dict(color='#e74c3c', width=3, dash='dash')
+                name='◉ NEURAL FORECAST',
+                line=dict(color='#7b2cbf', width=3, dash='solid'),
+                mode='lines+markers',
+                marker=dict(size=8, color='#7b2cbf', line=dict(color='#00d4ff', width=2))
             ))
             
             # Confidence interval
@@ -213,7 +633,7 @@ def render_forecast_tab(df, forecast_results, trend):
                 y=patient_forecast['upper_bound'],
                 fill=None,
                 mode='lines',
-                line_color='rgba(231, 76, 60, 0)',
+                line_color='rgba(123, 44, 191, 0)',
                 showlegend=False
             ))
             fig.add_trace(go.Scatter(
@@ -221,18 +641,44 @@ def render_forecast_tab(df, forecast_results, trend):
                 y=patient_forecast['lower_bound'],
                 fill='tonexty',
                 mode='lines',
-                line_color='rgba(231, 76, 60, 0)',
-                name='Confidence Interval'
+                line_color='rgba(123, 44, 191, 0)',
+                fillcolor='rgba(123, 44, 191, 0.2)',
+                name='◊ CONFIDENCE ZONE'
             ))
         
         fig.update_layout(
-            title='Patient Inflow: Historical vs 7-Day Forecast',
-            xaxis_title='Date',
-            yaxis_title='Number of Patients',
-            height=400,
-            hovermode='x unified'
+            title=dict(
+                text='<b>◈ PATIENT INFLOW PREDICTION MODEL</b>',
+                font=dict(family='Orbitron', size=18, color='#00d4ff'),
+                x=0.5
+            ),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0.3)',
+            xaxis=dict(
+                title='TEMPORAL AXIS',
+                gridcolor='rgba(0, 212, 255, 0.2)',
+                linecolor='rgba(0, 212, 255, 0.5)',
+                tickfont=dict(color='#8892b0', family='Rajdhani'),
+                titlefont=dict(color='#00d4ff', family='Orbitron')
+            ),
+            yaxis=dict(
+                title='PATIENT COUNT',
+                gridcolor='rgba(0, 212, 255, 0.2)',
+                linecolor='rgba(0, 212, 255, 0.5)',
+                tickfont=dict(color='#8892b0', family='Rajdhani'),
+                titlefont=dict(color='#00d4ff', family='Orbitron')
+            ),
+            height=450,
+            hovermode='x unified',
+            legend=dict(
+                font=dict(family='Rajdhani', color='#8892b0'),
+                bgcolor='rgba(0,0,0,0.5)',
+                bordercolor='rgba(0, 212, 255, 0.3)',
+                borderwidth=1
+            ),
+            margin=dict(l=60, r=30, t=80, b=60)
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
     
     with col2:
         st.subheader("Forecast Summary")
@@ -683,10 +1129,12 @@ def main():
     # Render KPI cards
     render_kpi_cards(df, forecast_results, bed_status, anomaly_status)
     
-    # Tabs
+    # ╔══════════════════════════════════════════════════════════════════════════╗
+    # ║                    NEURAL INTERFACE TABS                                  ║
+    # ╚══════════════════════════════════════════════════════════════════════════╝
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📈 Forecast", "🛏️ Bed Optimization", "👨‍⚕️ Staff Optimization", 
-        "🚨 Anomaly Detection", "🤖 AI Insights"
+        "◈ PREDICTION ENGINE", "◉ RESOURCE MATRIX", "◊ OPTIMIZATION CORE", 
+        "⚡ ANOMALY DETECTOR", "◆ NEURAL INSIGHTS"
     ])
     
     with tab1:
@@ -704,10 +1152,77 @@ def main():
     with tab5:
         render_insights_tab(insights)
     
-    # Footer
-    st.markdown("---")
-    st.markdown("<p style='text-align: center; color: gray;'>MediOptima © 2024 | AI-Powered Hospital Resource Optimization</p>", 
-                unsafe_allow_html=True)
+    # ╔══════════════════════════════════════════════════════════════════════════╗
+    # ║                    SYSTEM FOOTER - CYBERPUNK STYLE                        ║
+    # ╚══════════════════════════════════════════════════════════════════════════╝
+    st.markdown("""
+        <div style="
+            text-align: center; 
+            padding: 30px 20px; 
+            margin-top: 50px;
+            background: linear-gradient(180deg, transparent, rgba(0,212,255,0.05));
+            border-top: 1px solid rgba(0,212,255,0.2);
+        ">
+            <div style="
+                font-family: 'Orbitron', sans-serif;
+                font-size: 1.2rem;
+                background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                letter-spacing: 4px;
+                margin-bottom: 10px;
+            ">
+                ◈ MEDIOPTIMA NEURAL SYSTEM v2.0 ◈
+            </div>
+            <div style="
+                font-family: 'Rajdhani', sans-serif;
+                color: #8892b0;
+                font-size: 0.9rem;
+                letter-spacing: 2px;
+            ">
+                QUANTUM HEALTHCARE ANALYTICS ● AI-POWERED RESOURCE OPTIMIZATION
+            </div>
+            <div style="
+                margin-top: 15px;
+                font-family: 'Rajdhani', sans-serif;
+                color: #00d4ff;
+                font-size: 0.8rem;
+                opacity: 0.7;
+            ">
+                ◊ Built with Streamlit ● Powered by Neural Networks ◊
+            </div>
+            <div style="margin-top: 20px;">
+                <span style="
+                    display: inline-block;
+                    width: 8px;
+                    height: 8px;
+                    background: #00d4ff;
+                    border-radius: 50%;
+                    margin: 0 5px;
+                    animation: pulse 1.5s ease-in-out infinite;
+                "></span>
+                <span style="
+                    display: inline-block;
+                    width: 8px;
+                    height: 8px;
+                    background: #7b2cbf;
+                    border-radius: 50%;
+                    margin: 0 5px;
+                    animation: pulse 1.5s ease-in-out infinite 0.5s;
+                "></span>
+                <span style="
+                    display: inline-block;
+                    width: 8px;
+                    height: 8px;
+                    background: #00d4ff;
+                    border-radius: 50%;
+                    margin: 0 5px;
+                    animation: pulse 1.5s ease-in-out infinite 1s;
+                "></span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == '__main__':
     main()

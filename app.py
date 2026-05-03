@@ -21,7 +21,6 @@ from staff_optimizer import StaffOptimizer
 from anomaly_detector import AnomalyDetector
 from insight_generator import InsightGenerator
 from data_generator import generate_hospital_data
-from db_connector import DatabaseConnector, MockDatabaseConnector
 
 # Page Configuration
 st.set_page_config(
@@ -302,19 +301,8 @@ if 'models_fitted' not in st.session_state:
 
 @st.cache_data
 def load_or_generate_data():
-    """Load data from database or generate synthetic data."""
-    try:
-        # Try to connect to real database
-        db = DatabaseConnector()
-        if db.test_connection():
-            df = db.get_all_hospital_data(days=365)
-            df['Date'] = pd.to_datetime(df['Date'])
-            st.sidebar.success("✅ Connected to real database")
-            return df
-    except Exception as e:
-        st.sidebar.info("ℹ️ Using synthetic data (no database connection)")
-    
-    # Fallback: Try to load cached CSV
+    """Load data from cache or generate synthetic data."""
+    # Try to load cached CSV
     try:
         df = pd.read_csv('hospital_data.csv')
         df['Date'] = pd.to_datetime(df['Date'])
@@ -891,49 +879,8 @@ def render_insights_tab(insights):
 def main():
     """Main application."""
     
-    # Sidebar - Database Configuration
+    # Sidebar - Settings
     with st.sidebar:
-        st.header("🔌 Database Connection")
-        
-        use_real_db = st.checkbox("Connect to real database", value=False)
-        
-        if use_real_db:
-            db_type = st.selectbox("Database Type", ["MySQL", "PostgreSQL"])
-            host = st.text_input("Host", value="localhost")
-            port = st.number_input("Port", value=3306 if db_type == "MySQL" else 5432)
-            database = st.text_input("Database Name", value="hospital_db")
-            user = st.text_input("Username", value="root")
-            password = st.text_input("Password", type="password")
-            
-            if st.button("Test Connection"):
-                try:
-                    db = DatabaseConnector(
-                        db_type=db_type.lower(),
-                        host=host,
-                        port=port,
-                        database=database,
-                        user=user,
-                        password=password
-                    )
-                    if db.test_connection():
-                        st.success("✅ Connection successful!")
-                        # Save to session state
-                        st.session_state.db_config = {
-                            'db_type': db_type.lower(),
-                            'host': host,
-                            'port': port,
-                            'database': database,
-                            'user': user,
-                            'password': password
-                        }
-                    else:
-                        st.error("❌ Connection failed")
-                except Exception as e:
-                    st.error(f"❌ Error: {e}")
-        else:
-            st.info("ℹ️ Using synthetic demo data")
-        
-        st.markdown("---")
         st.header("⚙️ Settings")
         forecast_days = st.slider("Forecast Days", 7, 30, 7)
         
@@ -1015,6 +962,7 @@ def main():
     
     with tab5:
         render_insights_tab(insights)
+    
     
     # Footer
     st.markdown("---")

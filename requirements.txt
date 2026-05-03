@@ -1,12 +1,8 @@
 streamlit
 pandas
-numpy
 plotly
 matplotlib
 scikit-learn
 statsmodels
 pulp
 openpyxl
-pymysql
-psycopg2-binary
-python-dotenv

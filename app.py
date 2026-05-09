@@ -11,6 +11,7 @@ from plotly.subplots import make_subplots
 import sys
 import os
 import time
+from datetime import datetime, timedelta
 
 # Add modules to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
@@ -21,6 +22,7 @@ from staff_optimizer import StaffOptimizer
 from anomaly_detector import AnomalyDetector
 from insight_generator import InsightGenerator
 from data_generator import generate_hospital_data
+from data_manager import HospitalDataManager
 
 # Page Configuration
 st.set_page_config(
@@ -531,10 +533,12 @@ def render_bed_optimization_tab(df, models, forecast_results, bed_status):
             mode="gauge+number+delta",
             value=gen.get('utilization', 0),
             domain={'x': [0, 1], 'y': [0, 1]},
-            title={'text': "Utilization %"},
+            title={'text': "Utilization %", 'font': {'size': 16}},
+            number={'font': {'size': 40, 'color': '#2c3e50'}, 'suffix': '%'},
             gauge={
                 'axis': {'range': [0, 100]},
-                'bar': {'color': "#3498db"},
+                'bar': {'color': "#3498db", 'thickness': 0.6},
+                'bgcolor': 'white',
                 'steps': [
                     {'range': [0, 70], 'color': '#d5f5e3'},
                     {'range': [70, 90], 'color': '#f9e79f'},
@@ -547,7 +551,7 @@ def render_bed_optimization_tab(df, models, forecast_results, bed_status):
                 }
             }
         ))
-        fig1.update_layout(height=300)
+        fig1.update_layout(height=350, margin=dict(t=50, b=30))
         st.plotly_chart(fig1, use_container_width=True)
         
         st.write(f"**Total Beds:** {gen.get('total', 0)}")
@@ -562,10 +566,12 @@ def render_bed_optimization_tab(df, models, forecast_results, bed_status):
             mode="gauge+number+delta",
             value=icu.get('utilization', 0),
             domain={'x': [0, 1], 'y': [0, 1]},
-            title={'text': "ICU Utilization %"},
+            title={'text': "ICU Utilization %", 'font': {'size': 16}},
+            number={'font': {'size': 40, 'color': '#2c3e50'}, 'suffix': '%'},
             gauge={
                 'axis': {'range': [0, 100]},
-                'bar': {'color': "#e74c3c"},
+                'bar': {'color': "#e74c3c", 'thickness': 0.6},
+                'bgcolor': 'white',
                 'steps': [
                     {'range': [0, 70], 'color': '#d5f5e3'},
                     {'range': [70, 85], 'color': '#f9e79f'},
@@ -578,7 +584,7 @@ def render_bed_optimization_tab(df, models, forecast_results, bed_status):
                 }
             }
         ))
-        fig2.update_layout(height=300)
+        fig2.update_layout(height=350, margin=dict(t=50, b=30))
         st.plotly_chart(fig2, use_container_width=True)
         
         st.write(f"**Total ICU Beds:** {icu.get('total', 0)}")
@@ -876,6 +882,308 @@ def render_insights_tab(insights):
             st.write(f"**Owner:** {action.get('owner', 'Unassigned')}")
             st.write(f"**Deadline:** {action.get('deadline', 'Not set')}")
 
+def render_patient_management_tab(data_manager):
+    """Render interactive patient management."""
+    st.header("👤 Patient Management")
+    
+    # Initialize session state variables if not exists
+    if 'discharges_today' not in st.session_state:
+        st.session_state.discharges_today = 0
+    if 'admissions_today' not in st.session_state:
+        st.session_state.admissions_today = 0
+    
+    # Quick stats
+    patients = st.session_state.patients
+    active_patients = patients[patients['status'] == 'Active']
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Active Patients", len(active_patients))
+    col2.metric("Critical", len(patients[patients['status'] == 'Critical']))
+    col3.metric("Recovering", len(patients[patients['status'] == 'Recovering']))
+    col4.metric("Discharged Today", st.session_state.discharges_today)
+    
+    # Admit new patient
+    st.subheader("➕ Admit New Patient")
+    with st.form("admit_patient"):
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            name = st.text_input("Patient Name")
+            age = st.number_input("Age", 1, 120, 45)
+            gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+        
+        with col2:
+            condition = st.selectbox("Condition", [
+                'Flu', 'Pneumonia', 'Heart Disease', 'Diabetes', 'Hypertension', 
+                'Asthma', 'COVID-19', 'Fracture', 'Stroke', 'Cancer', 'Other'
+            ])
+            ward = st.selectbox("Ward", ['General', 'ICU', 'Emergency', 'Surgery', 'Maternity', 'Pediatrics', 'Cardiology'])
+            insurance = st.selectbox("Insurance", ['Private', 'Medicare', 'Medicaid', 'Self-Pay'])
+        
+        with col3:
+            # Show available beds
+            available_beds = data_manager.get_available_beds(ward if ward != 'Emergency' else None)
+            if not available_beds.empty:
+                bed_options = available_beds['bed_id'].tolist()
+                bed = st.selectbox("Assign Bed", bed_options)
+            else:
+                st.error("No beds available!")
+                bed = None
+            
+            doctor = st.text_input("Assigned Doctor", "Dr. Smith")
+        
+        submitted = st.form_submit_button("Admit Patient", type="primary")
+        
+        if submitted and name and bed:
+            new_patient = {
+                'patient_id': f'P{10000 + len(patients)}',
+                'name': name,
+                'age': age,
+                'gender': gender,
+                'condition': condition,
+                'ward': ward,
+                'status': 'Active',
+                'admission_date': datetime.now(),
+                'bed_number': bed,
+                'doctor': doctor,
+                'insurance': insurance,
+                'contact': '+1-555-0000',
+                'emergency_contact': '+1-555-0000'
+            }
+            
+            data_manager.admit_patient(new_patient)
+            data_manager.assign_bed(bed, new_patient['patient_id'])
+            st.success(f"✅ Patient {name} admitted successfully! ID: {new_patient['patient_id']}")
+            st.rerun()
+    
+    # Patient list with actions
+    st.subheader("📋 Patient List")
+    
+    # Filter options
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        search_name = st.text_input("🔍 Search by Name", "", placeholder="Type patient name...")
+    with col2:
+        status_filter = st.selectbox("Filter by Status", ['All', 'Active', 'Critical', 'Stable', 'Recovering', 'Discharged'])
+    with col3:
+        ward_filter = st.selectbox("Filter by Ward", ['All'] + patients['ward'].unique().tolist())
+    
+    filtered_patients = patients.copy()
+    
+    # Sort by admission date - newest first
+    filtered_patients['admission_date'] = pd.to_datetime(filtered_patients['admission_date'])
+    filtered_patients = filtered_patients.sort_values('admission_date', ascending=False)
+    
+    # Apply filters
+    if search_name:
+        filtered_patients = filtered_patients[filtered_patients['name'].str.contains(search_name, case=False, na=False)]
+    if status_filter != 'All':
+        filtered_patients = filtered_patients[filtered_patients['status'] == status_filter]
+    if ward_filter != 'All':
+        filtered_patients = filtered_patients[filtered_patients['ward'] == ward_filter]
+    
+    st.write(f"**Showing {len(filtered_patients)} patients** (Newest first)")
+    
+    # Display patients with action buttons
+    for idx, patient in filtered_patients.head(20).iterrows():
+        with st.expander(f"{patient['name']} | {patient['condition']} | {patient['status']}"):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.write(f"**ID:** {patient['patient_id']}")
+                st.write(f"**Age:** {patient['age']} | **Gender:** {patient['gender']}")
+                st.write(f"**Ward:** {patient['ward']} | **Bed:** {patient['bed_number']}")
+            
+            with col2:
+                st.write(f"**Doctor:** {patient['doctor']}")
+                st.write(f"**Insurance:** {patient['insurance']}")
+                st.write(f"**Admitted:** {patient['admission_date']}")
+            
+            with col3:
+                if patient['status'] != 'Discharged':
+                    if st.button("Discharge", key=f"discharge_{patient['patient_id']}"):
+                        data_manager.discharge_patient(patient['patient_id'])
+                        st.success(f"✅ {patient['name']} discharged!")
+                        st.rerun()
+                    
+                    if st.button("Transfer", key=f"transfer_{patient['patient_id']}"):
+                        st.session_state[f"transfer_mode_{patient['patient_id']}"] = True
+                    
+                    if st.session_state.get(f"transfer_mode_{patient['patient_id']}", False):
+                        new_ward = st.selectbox("New Ward", ['General', 'ICU', 'Emergency', 'Surgery'], key=f"ward_{patient['patient_id']}")
+                        avail_beds = data_manager.get_available_beds(new_ward)
+                        if not avail_beds.empty:
+                            new_bed = st.selectbox("New Bed", avail_beds['bed_id'].tolist(), key=f"bed_{patient['patient_id']}")
+                            if st.button("Confirm Transfer", key=f"confirm_{patient['patient_id']}"):
+                                data_manager.transfer_patient(patient['patient_id'], new_ward, new_bed)
+                                st.success(f"✅ {patient['name']} transferred to {new_ward}!")
+                                st.rerun()
+
+def render_bed_management_tab(data_manager):
+    """Render interactive bed management."""
+    st.header("🛏️ Bed Management")
+    
+    beds = st.session_state.beds
+    
+    # Overview
+    col1, col2, col3, col4, col5 = st.columns(5)
+    col1.metric("Total", len(beds))
+    col2.metric("Occupied", len(beds[beds['status'] == 'Occupied']))
+    col3.metric("Available", len(beds[beds['status'] == 'Available']))
+    col4.metric("Maintenance", len(beds[beds['status'] == 'Maintenance']))
+    col5.metric("Reserved", len(beds[beds['status'] == 'Reserved']))
+    
+    # Ward breakdown
+    st.subheader("📊 Ward Status")
+    ward_summary = beds.groupby('ward')['status'].value_counts().unstack(fill_value=0)
+    st.bar_chart(ward_summary)
+    
+    # Bed list with status updates
+    st.subheader("🛏️ Bed Details")
+    
+    ward_filter = st.selectbox("Select Ward", ['All'] + beds['ward'].unique().tolist())
+    filtered_beds = beds if ward_filter == 'All' else beds[beds['ward'] == ward_filter]
+    
+    # Show beds in a grid
+    bed_cols = st.columns(5)
+    for idx, bed in filtered_beds.iterrows():
+        with bed_cols[idx % 5]:
+            status_color = {
+                'Available': '🟢',
+                'Occupied': '🔴',
+                'Maintenance': '🟡',
+                'Reserved': '🔵'
+            }.get(bed['status'], '⚪')
+            
+            st.write(f"{status_color} **{bed['bed_id']}**")
+            st.caption(f"{bed['ward']} | {bed['status']}")
+            
+            if bed['status'] == 'Maintenance':
+                if st.button("Complete Repair", key=f"repair_{bed['bed_id']}"):
+                    data_manager.release_bed(bed['bed_id'])
+                    st.rerun()
+            elif bed['status'] == 'Available':
+                if st.button("Set Maintenance", key=f"maint_{bed['bed_id']}"):
+                    beds.loc[beds['bed_id'] == bed['bed_id'], 'status'] = 'Maintenance'
+                    st.session_state.beds = beds
+                    st.rerun()
+
+def render_staff_management_tab(data_manager):
+    """Render interactive staff management."""
+    st.header("👨‍⚕️ Staff Management")
+    
+    staff = st.session_state.staff
+    
+    # Overview
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("On Duty", len(staff[staff['status'] == 'On Duty']))
+    col2.metric("Off Duty", len(staff[staff['status'] == 'Off Duty']))
+    col3.metric("On Leave", len(staff[staff['status'] == 'On Leave']))
+    col4.metric("Busy", len(staff[staff['status'] == 'Busy']))
+    
+    # Role breakdown
+    st.subheader("📊 Staff by Role")
+    role_counts = staff['role'].value_counts()
+    st.bar_chart(role_counts)
+    
+    # Staff list with status updates
+    st.subheader("👥 Staff Roster")
+    
+    role_filter = st.selectbox("Filter by Role", ['All'] + staff['role'].unique().tolist())
+    filtered_staff = staff if role_filter == 'All' else staff[staff['role'] == role_filter]
+    
+    # Show staff with status toggle
+    for idx, member in filtered_staff.iterrows():
+        with st.expander(f"{member['name']} | {member['role']} | {member['status']}"):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.write(f"**ID:** {member['staff_id']}")
+                st.write(f"**Department:** {member['department']}")
+                st.write(f"**Shift:** {member['shift']}")
+            
+            with col2:
+                st.write(f"**Phone:** {member['phone']}")
+                st.write(f"**Email:** {member['email']}")
+                if member['role'] in ['Doctor', 'Nurse']:
+                    st.write(f"**Patients:** {member['patients_assigned']}")
+            
+            with col3:
+                new_status = st.selectbox(
+                    "Update Status",
+                    ['On Duty', 'Off Duty', 'On Leave', 'Busy'],
+                    index=['On Duty', 'Off Duty', 'On Leave', 'Busy'].index(member['status']),
+                    key=f"status_{member['staff_id']}"
+                )
+                
+                if new_status != member['status']:
+                    if st.button("Update", key=f"update_{member['staff_id']}"):
+                        data_manager.update_staff_status(member['staff_id'], new_status)
+                        st.success(f"✅ Status updated to {new_status}!")
+                        st.rerun()
+
+def render_equipment_management_tab(data_manager):
+    """Render interactive equipment management."""
+    st.header("🔧 Equipment & Resources")
+    
+    equipment = st.session_state.equipment
+    
+    # Overview
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Available", len(equipment[equipment['status'] == 'Available']))
+    col2.metric("In Use", len(equipment[equipment['status'] == 'In Use']))
+    col3.metric("Maintenance", len(equipment[equipment['status'] == 'Maintenance']))
+    col4.metric("Out of Order", len(equipment[equipment['status'] == 'Out of Order']))
+    
+    # Equipment by type
+    st.subheader("📊 Equipment by Type")
+    type_status = equipment.groupby('type')['status'].value_counts().unstack(fill_value=0)
+    st.bar_chart(type_status)
+    
+    # Quick actions
+    st.subheader("⚡ Quick Actions")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Use Equipment**")
+        eq_type = st.selectbox("Equipment Type", equipment['type'].unique().tolist(), key="use_eq_type")
+        available_eq = data_manager.get_available_equipment(eq_type)
+        
+        if not available_eq.empty:
+            eq_to_use = st.selectbox("Select Equipment", available_eq['equipment_id'].tolist(), key="use_eq")
+            patient_for_eq = st.text_input("Patient ID (optional)", "", key="eq_patient")
+            
+            if st.button("Mark In Use", type="primary"):
+                data_manager.use_equipment(eq_to_use, patient_for_eq if patient_for_eq else None)
+                st.success(f"✅ Equipment {eq_to_use} marked as In Use!")
+                st.rerun()
+        else:
+            st.warning("No available equipment of this type")
+    
+    with col2:
+        st.write("**Return Equipment**")
+        in_use_eq = equipment[equipment['status'] == 'In Use']
+        
+        if not in_use_eq.empty:
+            eq_to_return = st.selectbox("Select Equipment", in_use_eq['equipment_id'].tolist(), key="return_eq")
+            
+            if st.button("Mark Available"):
+                data_manager.update_equipment_status(eq_to_return, 'Available')
+                st.success(f"✅ Equipment {eq_to_return} returned!")
+                st.rerun()
+        else:
+            st.info("No equipment currently in use")
+    
+    # Equipment list
+    st.subheader("🔧 Equipment Inventory")
+    
+    type_filter = st.selectbox("Filter by Type", ['All'] + equipment['type'].unique().tolist())
+    filtered_equipment = equipment if type_filter == 'All' else equipment[equipment['type'] == type_filter]
+    
+    st.dataframe(filtered_equipment[['equipment_id', 'name', 'type', 'status', 'location', 'condition']], 
+                 use_container_width=True)
+
 def main():
     """Main application."""
     
@@ -942,10 +1250,49 @@ def main():
     # Render KPI cards
     render_kpi_cards(df, forecast_results, bed_status, anomaly_status)
     
-    # Main Navigation Tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    # Initialize data manager for interactive features
+    data_manager = HospitalDataManager()
+    
+    # Real-time stats
+    live_stats = data_manager.get_current_stats()
+    
+    # Live metrics display
+    st.markdown("---")
+    st.subheader("📊 Live Hospital Status")
+    
+    stat_col1, stat_col2, stat_col3, stat_col4, stat_col5, stat_col6 = st.columns(6)
+    
+    with stat_col1:
+        st.metric("🛏️ Beds Occupied", 
+                 f"{live_stats['occupied_beds']}/{live_stats['total_beds']}",
+                 f"{live_stats['available_beds']} available")
+    
+    with stat_col2:
+        st.metric("👥 Active Patients", live_stats['total_patients'])
+    
+    with stat_col3:
+        st.metric("⚠️ Critical", live_stats['critical_patients'])
+    
+    with stat_col4:
+        st.metric("👨‍⚕️ Staff On Duty", 
+                 f"{live_stats['staff_on_duty']}/{live_stats['total_staff']}")
+    
+    with stat_col5:
+        st.metric("🔧 Equipment In Use", 
+                 f"{live_stats['equipment_in_use']}/{live_stats['equipment_available'] + live_stats['equipment_in_use']}")
+    
+    with stat_col6:
+        st.metric("📈 Today's Admissions", 
+                 live_stats['admissions_today'],
+                 f"{live_stats['discharges_today']} discharges")
+    
+    st.markdown("---")
+    
+    # Main Navigation Tabs - Extended with interactive features
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
         "📈 Forecast", "🛏️ Bed Planning", "👨‍⚕️ Staff Scheduling", 
-        "⚠️ Alerts", "💡 Insights"
+        "⚠️ Alerts", "💡 Insights", "👤 Patients", "🛏️ Bed Mgmt", 
+        "👨‍⚕️ Staff Mgmt", "🔧 Equipment"
     ])
     
     with tab1:
@@ -963,6 +1310,17 @@ def main():
     with tab5:
         render_insights_tab(insights)
     
+    with tab6:
+        render_patient_management_tab(data_manager)
+    
+    with tab7:
+        render_bed_management_tab(data_manager)
+    
+    with tab8:
+        render_staff_management_tab(data_manager)
+    
+    with tab9:
+        render_equipment_management_tab(data_manager)
     
     # Footer
     st.markdown("---")

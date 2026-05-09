@@ -69,7 +69,7 @@ Thumbs.db
 *.ipynb
 
 # Environment variables
-.env
+# .env
 .env.local
 .env.*.local
 
